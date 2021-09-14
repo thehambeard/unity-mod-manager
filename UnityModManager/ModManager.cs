@@ -532,6 +532,8 @@ namespace UnityModManagerNet
 
                 string assemblyPath = System.IO.Path.Combine(Path, Info.AssemblyName);
                 string pdbPath = assemblyPath.Replace(".dll", ".pdb");
+                string mdbPath = $"{assemblyPath}.mdb";
+                this.Logger.Log($"The mdb is located {mdbPath}");
 
                 if (File.Exists(assemblyPath))
                 {
@@ -539,6 +541,7 @@ namespace UnityModManagerNet
                     {
                         var assemblyCachePath = assemblyPath;
                         var pdbCachePath = pdbPath;
+                        var mdbCachePath = mdbPath;
                         var cacheExists = false;
 
                         if (mFirstLoading)
@@ -547,6 +550,8 @@ namespace UnityModManagerNet
                             var hash = (ushort)((long)fi.LastWriteTimeUtc.GetHashCode() + version.GetHashCode() + ManagerVersion.GetHashCode()).GetHashCode();
                             assemblyCachePath = assemblyPath + $".{hash}.cache";
                             pdbCachePath = assemblyCachePath + ".pdb";
+                            mdbCachePath = assemblyCachePath + ".mdb";
+                            this.Logger.Log($"Cached mdb {mdbCachePath}");
                             cacheExists = File.Exists(assemblyCachePath);
 
                             if (!cacheExists)
@@ -592,6 +597,11 @@ namespace UnityModManagerNet
                                     {
                                         File.Copy(pdbPath, pdbCachePath, true);
                                     }
+                                    if (File.Exists(mdbPath))
+                                    {
+                                        this.Logger.Log($"Copying Cached mdb {mdbPath}");
+                                        File.Copy(mdbPath, mdbCachePath, true);
+                                    }
                                 }
                                 mAssembly = Assembly.LoadFile(assemblyCachePath);
 
@@ -612,6 +622,11 @@ namespace UnityModManagerNet
                                 using (var buf = new MemoryStream())
                                 {
                                     modDef.Write(buf);
+                                    if (File.Exists(mdbPath))
+                                    {
+                                        this.Logger.Log($"Loading mdb mdb {mdbPath}");
+                                        mAssembly = Assembly.Load(buf.ToArray(), File.ReadAllBytes(mdbPath));
+                                    }
                                     if (File.Exists(pdbPath))
                                     {
                                         mAssembly = Assembly.Load(buf.ToArray(), File.ReadAllBytes(pdbPath));
